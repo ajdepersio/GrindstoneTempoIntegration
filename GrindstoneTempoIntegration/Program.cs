@@ -5,6 +5,7 @@ using System.IO;
 using GrindstoneTempoIntegration.Domain.Grindstone;
 using System.Collections.Generic;
 using System.Linq;
+using GrindstoneTempoIntegration.Domain.Tempo;
 
 namespace GrindstoneTempoIntegration
 {
@@ -22,12 +23,21 @@ namespace GrindstoneTempoIntegration
 
         static void Main(string[] args)
         {
-            ProcessArguments(args[0], args[1]);
+            string startArg = "";
+            string endArg = "";
+            if (args.Length == 2)
+            {
+                startArg = args[0];
+                endArg = args[1];
+            }
+            ProcessArguments(startArg, endArg);
+
             var builder = new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())
                 .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
 
             Configuration = builder.Build();
+            TempoRepository.BearerToken = Configuration["TempoApiKey"];
 
             LoadGrindstoneData();
 
