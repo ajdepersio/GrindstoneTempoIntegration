@@ -6,6 +6,7 @@ using GrindstoneTempoIntegration.Domain.Grindstone;
 using System.Collections.Generic;
 using System.Linq;
 using GrindstoneTempoIntegration.Domain.Tempo;
+using GrindstoneTempoIntegration.Domain.Tempo.Entities;
 
 namespace GrindstoneTempoIntegration
 {
@@ -17,9 +18,12 @@ namespace GrindstoneTempoIntegration
 
         public static HashSet<TimeEntry> TimeEntries;
 
+        private static string TempoAccountId;
+
         private static DateTime StartDateTime;
 
         private static DateTime EndDateTime;
+
 
         static void Main(string[] args)
         {
@@ -40,10 +44,12 @@ namespace GrindstoneTempoIntegration
             TempoRepository.BearerToken = Configuration["TempoApiKey"];
 
             LoadGrindstoneData();
+            LoadTempoData();
 
             Console.WriteLine("Press any key to exit...");
             Console.ReadKey();
         }
+
 
         private static void ProcessArguments(string start, string end)
         {
@@ -80,6 +86,27 @@ namespace GrindstoneTempoIntegration
                 Console.WriteLine($"Time Entries: {TimeEntries.Count}");
             }
             Console.WriteLine("Loading Grindstone Data: Complete!");
+        }
+
+        private static void LoadTempoData()
+        {
+            Console.WriteLine("Loading Tempo Data...");
+            var rep = new TempoRepository();
+            var teams = rep.GetTeams();
+            Console.WriteLine($"Team Count: {teams.results.Count}");
+            var members = new List<Member>();
+            foreach (var team in teams.results)
+            {
+                var teamMembers = rep.GetMembers(team.id);
+                members.AddRange(teamMembers.results.Select(x => x.member));
+            }
+            //Clear out duplicates
+            var distinctMembers = members.Distinct(new MemberComparer());
+            Console.WriteLine($"Member Count: {distinctMembers.Count()}");
+            TempoAccountId = distinctMembers.First(x => x.displayName == Configuration["TempoDisplayName"]).accountId;
+            Console.WriteLine($"Tempo Account ID: {TempoAccountId}");
+
+            Console.WriteLine("Loading Tempo Data: Complete!");
         }
     }
 }
