@@ -56,5 +56,19 @@ namespace GrindstoneTempoIntegration.Domain.Tempo
 
             return getMembersResponse;
         }
+
+        public PostWorklogsResponse PostWorklog(PostWorklogsRequest requestBody)
+        {
+            var request = new RestRequest($"worklogs", Method.POST);
+            request.AddHeader("Authorization", $"Bearer {BearerToken}");
+            request.AddJsonBody(requestBody);
+
+            IRestResponse response = Client.Execute(request);
+            var content = response.Content;
+
+            var postWorklogsResponse = JsonConvert.DeserializeObject<PostWorklogsResponse>(content);
+
+            return postWorklogsResponse;
+        }
     }
 }
