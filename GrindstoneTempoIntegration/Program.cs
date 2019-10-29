@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using GrindstoneTempoIntegration.Domain.Tempo;
 using GrindstoneTempoIntegration.Domain.Tempo.Entities;
+using GrindstoneTempoIntegration.Domain.Tempo.Models;
 
 namespace GrindstoneTempoIntegration
 {
@@ -17,6 +18,8 @@ namespace GrindstoneTempoIntegration
         public static HashSet<WorkItem> WorkItems;
 
         public static HashSet<TimeEntry> TimeEntries;
+
+        public static List<PostWorklogsRequest> PostWorklogsRequests = new List<PostWorklogsRequest>();
 
         private static string TempoAccountId;
 
@@ -46,7 +49,31 @@ namespace GrindstoneTempoIntegration
             LoadGrindstoneData();
             LoadTempoData();
 
-            Console.WriteLine("Press any key to exit...");
+            foreach (var timeEntry in TimeEntries)
+            {
+                PostWorklogsRequests.Add(new PostWorklogsRequest(TempoAccountId, WorkItems.First(x => x.GrindstoneId == timeEntry.WorkItemId), timeEntry, int.Parse(Configuration["TimezoneAdjustment"])));
+            }
+
+            foreach (var request in PostWorklogsRequests)
+            {
+                Console.WriteLine(request.ToString());
+            }
+
+            Console.WriteLine("Press Y to continue");
+            var answer = Console.ReadKey();
+            if (answer.KeyChar.ToString().ToUpper() == "Y")
+            {
+                Console.WriteLine("Posting Data to Tempo...");
+                var rep = new TempoRepository();
+                foreach (var request in PostWorklogsRequests)
+                {
+                    Console.WriteLine(request.ToString());
+                    rep.PostWorklog(request);
+                }
+            }
+
+
+            Console.WriteLine("\nPress any key to exit...");
             Console.ReadKey();
         }
 
@@ -68,22 +95,30 @@ namespace GrindstoneTempoIntegration
 
         private static void LoadGrindstoneData()
         {
+
             Console.WriteLine("Loading Grindstone Data...");
             using (StreamReader file = File.OpenText(Configuration["GrindstoneDatabaseLocation"]))
             {
-                var serializer = new JsonSerializer();
-                var gsdb = (GrindstoneDatabase)serializer.Deserialize(file, typeof(GrindstoneDatabase));
+                try
+                {
+                    var serializer = new JsonSerializer();
+                    var gsdb = (GrindstoneDatabase)serializer.Deserialize(file, typeof(GrindstoneDatabase));
 
-                WorkItems = gsdb.f.t
-                    .Select(x => new WorkItem(x))
-                    .ToHashSet();
-                Console.WriteLine($"Work Items: {WorkItems.Count}");
+                    WorkItems = gsdb.f.t
+                        .Select(x => new WorkItem(x))
+                        .ToHashSet();
+                    Console.WriteLine($"Work Items: {WorkItems.Count}");
 
-                TimeEntries = gsdb.f.r
-                    .Where(x => x.s >= StartDateTime && x.e <= EndDateTime)
-                    .Select(x => new TimeEntry(x))
-                    .ToHashSet();
-                Console.WriteLine($"Time Entries: {TimeEntries.Count}");
+                    TimeEntries = gsdb.f.r
+                        .Where(x => x.s.AddHours(double.Parse(Configuration["TimezoneAdjustment"])) >= StartDateTime && x.e.AddHours(double.Parse(Configuration["TimezoneAdjustment"])) <= EndDateTime)
+                        .Select(x => new TimeEntry(x))
+                        .ToHashSet();
+                    Console.WriteLine($"Time Entries: {TimeEntries.Count}");
+                }
+                finally
+                {
+                    file.Close();
+                }
             }
             Console.WriteLine("Loading Grindstone Data: Complete!");
         }

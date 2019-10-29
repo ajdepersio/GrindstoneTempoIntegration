@@ -15,18 +15,25 @@ namespace GrindstoneTempoIntegration.Domain.Tempo.Models
         public string description { get; set; }
         public string authorAccountId { get; set; }
         
-        public PostWorklogsRequest(string authorAccountId, WorkItem workItem, TimeEntry timeEntry)
+        public PostWorklogsRequest(string authorAccountId, WorkItem workItem, TimeEntry timeEntry, int timezoneAdjustment)
         {
+            var time = (int)(timeEntry.End - timeEntry.Start).TotalSeconds > 60 ? (int)(timeEntry.End - timeEntry.Start).TotalSeconds : 60;
+
             this.issueKey = workItem.TicketId;
-            this.timeSpentSeconds = (int)(timeEntry.End - timeEntry.Start).TotalSeconds;
-            this.billableSeconds = (int)(timeEntry.End - timeEntry.Start).TotalSeconds;
-            this.startDate = timeEntry.Start.ToString("yyyy-MM-dd");
-            this.startTime = timeEntry.Start.ToString("HH:mm:ss");
+            this.timeSpentSeconds = time;
+            this.billableSeconds = time;
+            this.startDate = timeEntry.Start.AddHours(timezoneAdjustment).ToString("yyyy-MM-dd");
+            this.startTime = timeEntry.Start.AddHours(timezoneAdjustment).ToString("HH:mm:ss");
 
             string description = !(string.IsNullOrWhiteSpace(timeEntry.Description)) ? timeEntry.Description : workItem.Name;
             this.description = description;
 
             this.authorAccountId = authorAccountId;
+        }
+
+        public override string ToString()
+        {
+            return $"Ticket: {this.issueKey} Start: {this.startDate} {this.startTime} Time: {this.timeSpentSeconds} Description: {this.description}";
         }
     }
 }
