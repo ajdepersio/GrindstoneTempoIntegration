@@ -14,10 +14,15 @@ namespace GrindstoneTempoIntegration.Domain.Tempo.Models
         public string startTime { get; set; }
         public string description { get; set; }
         public string authorAccountId { get; set; }
-        
+
         public PostWorklogsRequest(string authorAccountId, WorkItem workItem, TimeEntry timeEntry, int timezoneAdjustment)
         {
-            var time = (int)(timeEntry.End - timeEntry.Start).TotalSeconds > 60 ? (int)(timeEntry.End - timeEntry.Start).TotalSeconds : 60;
+            //Round up time to the next min
+            var time = (int)(timeEntry.End - timeEntry.Start).TotalSeconds;
+            if (time % 60 != 0)
+            {
+                time = time + (60 - (time % 60));
+            }
 
             this.issueKey = workItem.TicketId;
             this.timeSpentSeconds = time;
