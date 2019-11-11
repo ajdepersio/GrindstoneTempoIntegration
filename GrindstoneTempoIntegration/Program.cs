@@ -63,12 +63,19 @@ namespace GrindstoneTempoIntegration
             var answer = Console.ReadKey();
             if (answer.KeyChar.ToString().ToUpper() == "Y")
             {
-                Console.WriteLine("Posting Data to Tempo...");
+                Console.WriteLine("\nPosting Data to Tempo...");
                 var rep = new TempoRepository();
                 foreach (var request in PostWorklogsRequests)
                 {
                     Console.WriteLine(request.ToString());
-                    rep.PostWorklog(request);
+                    if (Configuration["DebugMode"] == "false")
+                    {
+                        rep.PostWorklog(request);
+                    }
+                    else
+                    {
+                        Console.WriteLine("Debug Mode Enabled.  Not Sending.");
+                    }
                 }
             }
 
